@@ -309,9 +309,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainMenuPanel: {fileID: 68604894}
   controlsPanel: {fileID: 142962024}
-  levelSelectPanel: {fileID: 0}
   level1Scene: Level1
-  level2Scene: Level2
 --- !u!1 &142962024
 GameObject:
   m_ObjectHideFlags: 0
@@ -1447,12 +1445,15 @@ MonoBehaviour:
 
     <b>LMB</b> - To attack
 
+    <b>P</b>
+    - To pause
 
-    Must
-    not be seen by enemy or they will chase you
+
+    Must not be seen by enemy or they will chase you
 
 
-    Backstabs = one hit
+    Backstabs
+    = one hit
 
 '
   m_isRightToLeft: 0

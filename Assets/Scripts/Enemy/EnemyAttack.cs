@@ -3,7 +3,7 @@ using UnityEngine;
 public class EnemyAttack : MonoBehaviour
 {
     public float damage = 10f;
-    public float attackRange = 3f;
+    public float attackRange = 2f;
     public float attackRate = 1f;
     private float nextAttackTime = 0f;
 
@@ -18,16 +18,12 @@ public class EnemyAttack : MonoBehaviour
             playerHealth = player.GetComponent<Health>();
 
         enemyAggro = GetComponent<EnemyAggro>();
-
-        if (playerHealth == null)
-            Debug.LogWarning("Player has no Health component!");
-        if (enemyAggro == null)
-            Debug.LogWarning("EnemyAttack missing EnemyAggro component!");
     }
 
     void Update()
     {
-        if (player == null || enemyAggro == null) return;
+        if (player == null || playerHealth == null || enemyAggro == null) return;
+
         if (!enemyAggro.isAggro) return;
 
         float distance = Vector3.Distance(transform.position, player.position);

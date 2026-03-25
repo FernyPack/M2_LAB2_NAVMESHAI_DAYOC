@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,10 +9,11 @@ public class GameManager : MonoBehaviour
 
     public TMP_Text killText;
     public GameObject LevelCompleteUI;
-    public GameObject Failed;
-    public GameObject pauseUI;
+    public GameObject FailedUI;
+    public GameObject PauseUI;
     public Button retryButton;
     public Button mainMenuButton;
+    public Button resumeButton;
 
     public int requiredKills = 3;
     private int currentKills = 0;
@@ -29,26 +31,32 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    void Start()
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         SetupUI();
         UpdateKillUI();
-        HandleCursorState();
+        UpdateCursorState(scene.name);
     }
 
     void SetupUI()
     {
-        if (killText == null)
-        {
-            GameObject go = GameObject.Find("KillText");
-            if (go != null) killText = go.GetComponent<TMP_Text>();
-        }
+        GameObject go = GameObject.Find("Kills");
+        if (go != null) killText = go.GetComponent<TMP_Text>();
+
+        LevelCompleteUI = GameObject.Find("LevelCompleteUI");
+        FailedUI = GameObject.Find("Failed");
+        PauseUI = GameObject.Find("Pause");
+
+        retryButton = GameObject.Find("RetryButton")?.GetComponent<Button>();
+        mainMenuButton = GameObject.Find("MainMenuButton")?.GetComponent<Button>();
+        resumeButton = GameObject.Find("ResumeButton")?.GetComponent<Button>();
 
         if (LevelCompleteUI != null) LevelCompleteUI.SetActive(false);
-        if (Failed != null) Failed.SetActive(false);
-        if (pauseUI != null) pauseUI.SetActive(false);
+        if (FailedUI != null) FailedUI.SetActive(false);
+        if (PauseUI != null) PauseUI.SetActive(false);
 
         if (retryButton != null)
         {
@@ -61,14 +69,25 @@ public class GameManager : MonoBehaviour
             mainMenuButton.onClick.RemoveAllListeners();
             mainMenuButton.onClick.AddListener(GoToMainMenu);
         }
+
+        if (resumeButton != null)
+        {
+            resumeButton.onClick.RemoveAllListeners();
+            resumeButton.onClick.AddListener(ResumeGame);
+        }
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+            TogglePause();
     }
 
     public void AddKill()
     {
         currentKills++;
         UpdateKillUI();
-        if (currentKills >= requiredKills)
-            WinLevel();
+        if (currentKills >= requiredKills) WinLevel();
     }
 
     void UpdateKillUI()
@@ -79,67 +98,66 @@ public class GameManager : MonoBehaviour
 
     public void WinLevel()
     {
-        if (LevelCompleteUI != null)
-            LevelCompleteUI.SetActive(true);
-
-        Time.timeScale = 0f;
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        if (LevelCompleteUI != null) LevelCompleteUI.SetActive(true);
+        if (FailedUI != null) FailedUI.SetActive(false);
+        PauseGame();
     }
 
     public void LoseLevel()
     {
-        if (Failed != null)
-            Failed.SetActive(true);
-
-        Time.timeScale = 0f;
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        if (FailedUI != null) FailedUI.SetActive(true);
+        if (LevelCompleteUI != null) LevelCompleteUI.SetActive(false);
+        PauseGame();
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-            TogglePause();
-    }
-
-    public void TogglePause()
+    void TogglePause()
     {
         isPaused = !isPaused;
-
-        if (pauseUI != null)
-            pauseUI.SetActive(isPaused);
-
+        if (PauseUI != null) PauseUI.SetActive(isPaused);
         Time.timeScale = isPaused ? 0f : 1f;
-        Cursor.visible = isPaused;
-        Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
+        UpdateCursorState(SceneManager.GetActiveScene().name);
+    }
+
+    void PauseGame()
+    {
+        isPaused = true;
+        Time.timeScale = 0f;
+        UpdateCursorState(SceneManager.GetActiveScene().name);
+    }
+
+    void ResumeGame()
+    {
+        isPaused = false;
+        if (PauseUI != null) PauseUI.SetActive(false);
+        Time.timeScale = 1f;
+        UpdateCursorState(SceneManager.GetActiveScene().name);
     }
 
     public void RetryLevel()
     {
         Time.timeScale = 1f;
         currentKills = 0;
-        if (LevelCompleteUI != null) LevelCompleteUI.SetActive(false);
-        if (Failed != null) Failed.SetActive(false);
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            player.transform.position = Vector3.zero;
-            player.GetComponent<Rigidbody>().velocity = Vector3.zero;
-        }
+        SceneManager.LoadScene("Level1");
     }
 
     public void GoToMainMenu()
     {
         Time.timeScale = 1f;
         currentKills = 0;
-        if (LevelCompleteUI != null) LevelCompleteUI.SetActive(false);
-        if (Failed != null) Failed.SetActive(false);
+        SceneManager.LoadScene("MainMenu");
     }
 
-    void HandleCursorState()
+    void UpdateCursorState(string sceneName)
     {
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
+        if (sceneName == "MainMenu" || sceneName == "WinScene" || sceneName == "LoseScene" || isPaused)
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else
+        {
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
     }
 }
